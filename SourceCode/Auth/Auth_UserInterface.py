@@ -8,11 +8,11 @@ import uuid
 import time
 
 # Initialize Firebase if not already initialized
-if not firebase_admin._apps:
-    cred = credentials.Certificate('firebaseKEYAFSTDUY.json')
-    firebase_admin.initialize_app(cred)
+# if not firebase_admin._apps:
+#     cred = credentials.Certificate('firebaseKEYAFSTDUY.json')
+#     firebase_admin.initialize_app(cred)
 
-db = firestore.client()
+# db = firestore.client()
 
 ##Basic User Interface is based on another project Carlos wrote and is merely to be a starting point as a reference 
 
@@ -22,6 +22,28 @@ if 'user_info' not in st.session_state:
 
 if 'show_signup' not in st.session_state:
     st.session_state.show_signup = True  # Force Sign Up as default
+
+
+# Initialize session state for chat display
+if 'show_reset' not in st.session_state:
+    st.session_state.show_reset = False
+# Initialize session state
+if 'user_info' not in st.session_state:
+    st.session_state.user_info = None
+if 'auth_warning' not in st.session_state:
+    st.session_state.auth_warning = None
+if 'auth_success' not in st.session_state:
+    st.session_state.auth_success = None
+if 'show_signup' not in st.session_state:
+    st.session_state.show_signup = False
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+if 'session_id' not in st.session_state:
+    if st.session_state.get('user_info'):
+        st.session_state.session_id = st.session_state.user_info['localId']  # Firebase UID
+    else:
+        st.session_state.session_id = "guest_user"
+
 
 
 def show_auth_pages():

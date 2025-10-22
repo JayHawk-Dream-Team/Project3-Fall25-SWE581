@@ -8,11 +8,11 @@ from firebase_admin import credentials, firestore
 
 ## TODO: ADD USE STREAMLIT KEYS IF NOT RUNNING LOCALLY 
 # Initialize Firebase if not already initialized
-if not firebase_admin._apps:
-    cred = credentials.Certificate('firebaseKEYAFSTDUY.json')
-    firebase_admin.initialize_app(cred)
+# if not firebase_admin._apps:
+#     # cred = credentials.Certificate('firebaseKEYAFSTDUY.json')
+#     # firebase_admin.initialize_app(cred)
 
-db = firestore.client()
+# db = firestore.client()
 
 ## -------------------------------------------------------------------------------------------------
 ## Firebase Auth API -------------------------------------------------------------------------------
