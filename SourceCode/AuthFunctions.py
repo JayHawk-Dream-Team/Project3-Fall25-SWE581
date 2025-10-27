@@ -1,4 +1,5 @@
 import json
+import os
 import requests
 import streamlit as st
 import firebase_admin
@@ -24,8 +25,33 @@ def get_db():
 ## Firebase Auth API -------------------------------------------------------------------------------
 ## -------------------------------------------------------------------------------------------------
 
+def _get_firebase_web_api_key() -> str:
+    """Resolve the Firebase Web API key from Streamlit secrets or env vars.
+
+    Supports both the new [firebase] block (apiKey) and legacy FIREBASE_WEB_API_KEY.
+    """
+    # New preferred structure: [firebase] apiKey = "..."
+    try:
+        if "firebase" in st.secrets and "apiKey" in st.secrets["firebase"]:
+            key = st.secrets["firebase"]["apiKey"]
+            if key:
+                return key
+    except Exception:
+        # st.secrets may not be available outside Streamlit runtime
+        pass
+
+    # Environment variable fallbacks
+    key = os.getenv("FIREBASE_WEB_API_KEY") or os.getenv("FIREBASE_API_KEY")
+    if key:
+        return key
+
+    raise RuntimeError(
+        "Firebase Web API key not found. Set [firebase].apiKey in Streamlit secrets or FIREBASE_WEB_API_KEY env var."
+    )
+
 def sign_in_with_email_and_password(email, password):
-    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key={0}".format(st.secrets['FIREBASE_WEB_API_KEY'])
+    api_key = _get_firebase_web_api_key()
+    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/verifyPassword?key={0}".format(api_key)
     headers = {"content-type": "application/json; charset=UTF-8"}
     data = json.dumps({"email": email, "password": password, "returnSecureToken": True})
     request_object = requests.post(request_ref, headers=headers, data=data)
@@ -33,7 +59,8 @@ def sign_in_with_email_and_password(email, password):
     return request_object.json()
 
 def get_account_info(id_token):
-    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key={0}".format(st.secrets['FIREBASE_WEB_API_KEY'])
+    api_key = _get_firebase_web_api_key()
+    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key={0}".format(api_key)
     headers = {"content-type": "application/json; charset=UTF-8"}
     data = json.dumps({"idToken": id_token})
     request_object = requests.post(request_ref, headers=headers, data=data)
@@ -41,7 +68,8 @@ def get_account_info(id_token):
     return request_object.json()
 
 def send_email_verification(id_token):
-    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key={0}".format(st.secrets['FIREBASE_WEB_API_KEY'])
+    api_key = _get_firebase_web_api_key()
+    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key={0}".format(api_key)
     headers = {"content-type": "application/json; charset=UTF-8"}
     data = json.dumps({"requestType": "VERIFY_EMAIL", "idToken": id_token})
     request_object = requests.post(request_ref, headers=headers, data=data)
@@ -49,7 +77,8 @@ def send_email_verification(id_token):
     return request_object.json()
 
 def send_password_reset_email(email):
-    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key={0}".format(st.secrets['FIREBASE_WEB_API_KEY'])
+    api_key = _get_firebase_web_api_key()
+    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/getOobConfirmationCode?key={0}".format(api_key)
     headers = {"content-type": "application/json; charset=UTF-8"}
     data = json.dumps({"requestType": "PASSWORD_RESET", "email": email})
     request_object = requests.post(request_ref, headers=headers, data=data)
@@ -57,7 +86,8 @@ def send_password_reset_email(email):
     return request_object.json()
 
 def create_user_with_email_and_password(email, password, first_name=None):
-    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key={0}".format(st.secrets['FIREBASE_WEB_API_KEY'])
+    api_key = _get_firebase_web_api_key()
+    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/signupNewUser?key={0}".format(api_key)
     headers = {"content-type": "application/json; charset=UTF-8"}
     data = {"email": email, "password": password, "returnSecureToken": True}
     if first_name:
@@ -67,7 +97,8 @@ def create_user_with_email_and_password(email, password, first_name=None):
     return request_object.json()
 
 def delete_user_account(id_token):
-    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/deleteAccount?key={0}".format(st.secrets['FIREBASE_WEB_API_KEY'])
+    api_key = _get_firebase_web_api_key()
+    request_ref = "https://www.googleapis.com/identitytoolkit/v3/relyingparty/deleteAccount?key={0}".format(api_key)
     headers = {"content-type": "application/json; charset=UTF-8"}
     data = json.dumps({"idToken": id_token})
     request_object = requests.post(request_ref, headers=headers, data=data)
