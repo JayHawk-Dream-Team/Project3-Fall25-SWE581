@@ -3,16 +3,22 @@ import requests
 import streamlit as st
 import firebase_admin
 from firebase_admin import credentials, firestore
+from HelperFunctions import initFirebase
+
+_db = None
+
+def get_db():
+    """Lazy-initialize and return a Firestore client via initFirebase()."""
+    global _db
+    if _db is None:
+        _db = initFirebase()
+    return _db
 
 #This code is from a project Carlos wrote a while a go for a research project and provides a starting point for the team to work off
 
 ## TODO: ADD USE STREAMLIT KEYS IF NOT RUNNING LOCALLY 
-# Initialize Firebase if not already initialized
-# if not firebase_admin._apps:
-#     # cred = credentials.Certificate('firebaseKEYAFSTDUY.json')
-#     # firebase_admin.initialize_app(cred)
-
-# db = firestore.client()
+# Firestore usage example (call get_db() where needed):
+# db = get_db()
 
 ## -------------------------------------------------------------------------------------------------
 ## Firebase Auth API -------------------------------------------------------------------------------
@@ -104,6 +110,17 @@ def sign_in(email:str, password:str) -> None:
     except Exception as error:
         print(error)
         st.session_state.auth_warning = 'Error: Please try again later'
+
+
+def get_user_chat_history(user_id: str):
+    """TEMP stub. Replace with Firestore-backed history using get_db().
+
+    Example when ready:
+        db = get_db()
+        docs = db.collection('chat_history').document(user_id).collection('messages').order_by('ts').stream()
+        return [d.to_dict() for d in docs]
+    """
+    return []
 
 
 def create_account(email: str, password: str, first_name: str) -> None:

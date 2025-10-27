@@ -1,18 +1,17 @@
 import streamlit as st
 import requests
-from AuthFunctions import sign_in, create_account, reset_password
+from AuthFunctions import sign_in, create_account, reset_password, sign_out
+from HelperFunctions import initFirebase
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 import uuid
 import time
 
-# Initialize Firebase if not already initialized
-# if not firebase_admin._apps:
-#     cred = credentials.Certificate('firebaseKEYAFSTDUY.json')
-#     firebase_admin.initialize_app(cred)
-
-# db = firestore.client()
+@st.cache_resource(show_spinner=False)
+def get_db():
+    """Cached Firestore client for UI usage when needed."""
+    return initFirebase()
 
 ##Basic User Interface is based on another project Carlos wrote and is merely to be a starting point as a reference 
 
@@ -47,7 +46,7 @@ if 'session_id' not in st.session_state:
 
 
 def show_auth_pages():
-    st.title("Welcome to Our Super Cool App For Project 3")
+    st.title("HomeStand")
 
     # Create tab-like buttons
     col1, col2, col3 = st.columns(3)
@@ -135,8 +134,25 @@ def show_password_reset_form():
 
     st.caption("Remember your password? Click 'Sign In' above")
 
+
+def show_logged_in_view():
+    """Simple placeholder view shown after successful login."""
+    user = st.session_state.get('user_info') or {}
+    name = user.get('displayName') or user.get('email') or 'User'
+
+    st.title("You're in")
+    st.success(f"Signed in as {name}")
+    st.caption("This is a placeholder view after successful authentication. Replace with your app dashboard.")
+
+    with st.expander("Session details", expanded=False):
+        st.json({k: v for k, v in user.items() if k in ("email", "localId", "emailVerified", "displayName")})
+
+    col1, col2 = st.columns(2)
+    if col1.button("Sign out"):
+        sign_out()
+        st.rerun()
+
 if st.session_state.get("user_info"):
-      #TODO: Replace this with our actual app once we write something really cool other wise this is place holder
-      show_auth_pages()
+    show_logged_in_view()
 else:
     show_auth_pages()
