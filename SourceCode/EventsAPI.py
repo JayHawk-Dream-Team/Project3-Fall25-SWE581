@@ -1,25 +1,6 @@
-"""
-Functions:
-- create_event(db, event_data, user_id, event_id=None)
-- get_event(db, event_id)
-- list_events(db, published=None, limit=None, start_after=None)
-- update_event(db, event_id, updates, user_id)
-- publish_event(db, event_id, user_id)
-- unpublish_event(db, event_id, user_id)
-- delete_event(db, event_id, user_id)
-
-Usage:
-    from HelperFunctions import initFirebase
-    import EventsAPI as EAPI
-
-    db = initFirebase()
-    ev = EAPI.create_event(db, {...}, user_id="uid_abc")
-"""
-
 from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timezone
 import uuid
-
 from HelperFunctions import initFirebase
 
 # Firestore client type is dynamic; keep local reference
@@ -93,7 +74,7 @@ def create_event(db,
         doc_ref.set(doc)
         doc_snapshot = doc_ref.get()
     else:
-        doc_ref = col.document()  # auto ID
+        doc_ref = col.document()
         doc_ref.set(doc)
         doc_snapshot = doc_ref.get()
 
@@ -141,7 +122,6 @@ def list_events(db, published: Optional[bool] = None, limit: Optional[int] = Non
 
     docs = None
     if start_after:
-        # Attempt to resolve start_after doc for pagination cursor
         start_doc = col.document(start_after).get()
         if start_doc.exists:
             docs = query.start_after(start_doc).limit(limit or 50).stream()
@@ -250,8 +230,6 @@ def default_db():
     return initFirebase()
 
 if __name__ == "__main__":
-    # Quick smoke test (only runs when executing the file directly)
-    # NOTE: running this requires valid Firebase credentials available to HelperFunctions.initFirebase()
     db = default_db()
     print("EventsAPI module loaded. Example list (published only):")
     events, next_id = list_events(db, published=True, limit=5)
