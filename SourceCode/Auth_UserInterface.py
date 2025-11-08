@@ -1,3 +1,12 @@
+"""Streamlit Authentication UI layer for HomeStand.
+
+This module provides a tabbed user interface for account creation,
+sign in, and password reset flows using Firebase Authentication via helper
+functions defined in AuthFunctions. After successful authentication a simple
+logged in placeholder view is shown which will be replaced with the real app
+dashboard.
+"""
+
 import streamlit as st
 import requests
 from AuthFunctions import sign_in, create_account, reset_password, sign_out
@@ -10,7 +19,12 @@ import time
 
 @st.cache_resource(show_spinner=False)
 def get_db():
-    """Cached Firestore client for UI usage when needed."""
+    """Return a cached Firestore client.
+
+    This is a thin wrapper around `initFirebase()` allowing UI components to
+    access Firestore efficiently. Currently not heavily used but retained for
+    future expansion (e.g., storing user preferences or chat transcripts).
+    """
     return initFirebase()
 
 ##Basic User Interface is based on another project Carlos wrote and is merely to be a starting point as a reference 
@@ -46,6 +60,12 @@ if 'session_id' not in st.session_state:
 
 
 def show_auth_pages():
+    """Render the authentication landing view with tab-like navigation.
+
+    Displays buttons acting as tabs for Create Account, Sign In, and Reset
+    Password flows. Based on session_state flags, the corresponding form is
+    shown. Button clicks update flags and trigger a rerun to refresh UI.
+    """
     st.title("HomeStand")
 
     # Create tab-like buttons
@@ -85,6 +105,13 @@ def show_auth_pages():
         show_signin_form()
 
 def show_signup_form():
+    """Display the account creation form.
+
+    Collects first name (mapped to Firebase displayName), email, and password.
+    On submit validates completeness before delegating to `create_account`.
+    Successful creation triggers a rerun (which will transition to post-login
+    view) while warnings are surfaced via session_state.
+    """
 
     with st.form("signup_form"):
         st.subheader("Create Your Account")
@@ -106,6 +133,12 @@ def show_signup_form():
     st.caption("Already have an account? Click 'Sign In' above")
 
 def show_signin_form():
+    """Display the sign-in form.
+
+    Accepts email and password then calls `sign_in` which handles Firebase
+    authentication, session population, chat history load, and rerun. Any
+    auth warnings are shown below the form.
+    """
     with st.form("signin_form"):
         st.subheader("Sign In to Your Account")
         email = st.text_input("Email Address", key="signin_email")
@@ -120,6 +153,11 @@ def show_signin_form():
     st.caption("Need an account? Click 'Create Account' above")
 
 def show_password_reset_form():
+    """Display the password reset request form.
+
+    Takes an email address and invokes `reset_password` which triggers Firebase
+    to send a reset link. Success and warning messages are surfaced below.
+    """
     with st.form("password_reset_form"):
         st.subheader("Reset Your Password")
         email = st.text_input("Email Address", key="reset_email")
@@ -136,7 +174,12 @@ def show_password_reset_form():
 
 
 def show_logged_in_view():
-    """Simple placeholder view shown after successful login."""
+    """Render a placeholder post-authentication view.
+
+    Displays basic user identity info and an expander with selected session
+    attributes. Includes a sign-out button that clears session state. Intended
+    to be replaced with the actual application dashboard in future iterations.
+    """
     user = st.session_state.get('user_info') or {}
     name = user.get('displayName') or user.get('email') or 'User'
 
