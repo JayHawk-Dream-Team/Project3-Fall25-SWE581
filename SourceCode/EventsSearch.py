@@ -13,9 +13,9 @@ is populated before calling `show_events_dashboard`.
 
 from datetime import datetime
 import streamlit as st
-from EventsAPI import list_events, create_event
+from EventsAPI import create_event
+from EventsSearchAPI import list_filtered_events as list_events
 from HelperFunctions import initFirebase
-
 @st.cache_resource(show_spinner=False)
 def _db():
 	"""Return a cached Firestore client for event operations."""
@@ -37,14 +37,28 @@ def show_events_dashboard():
 	st.caption(f"Signed in as **{name}**")
 
 	# --- Search + Filter Row ---
-	col1, col2, col3 = st.columns([3, 1, 1])
+	# col1, col2, col3 = st.columns([3, 1, 1])
+	# with col1:
+	# 	search_text = st.text_input("🔍 Search Events", placeholder="Search by title or description...")
+	# with col2:
+	# 	published_filter = st.selectbox("Filter", ["All", "Published", "Unpublished"])
+	# with col3:
+	# 	if st.button("🔄 Refresh"):
+	# 		st.rerun()
+	col1, col2, col3, col4 = st.columns([3, 1.5, 1.5, 1.5])
 	with col1:
 		search_text = st.text_input("🔍 Search Events", placeholder="Search by title or description...")
 	with col2:
-		published_filter = st.selectbox("Filter", ["All", "Published", "Unpublished"])
+		location_filter = st.text_input("📍 Location", placeholder="City or State...")
 	with col3:
-		if st.button("🔄 Refresh"):
-			st.rerun()
+		date_filter = st.date_input("📅 Date (optional)", value=None)
+	with col4:
+		published_filter = st.selectbox("Filter", ["All", "Published", "Unpublished"])
+
+
+	if st.button("🔄 Refresh"):
+		st.rerun()
+
 
 	# --- Create Event Button ---
 	with st.expander("➕ Create New Event"):
@@ -80,8 +94,8 @@ def show_events_dashboard():
 	elif published_filter == "Unpublished":
 		filter_flag = False
 
-	events, next_id = list_events(db, published=filter_flag, limit=25)
-
+	events, next_id = list_events(db,published=filter_flag,limit=25,search_text=search_text or None,location=location_filter or None, date=date_filter.isoformat() if date_filter else None)
+	
 	# --- Search Filtering (client-side) ---
 	if search_text:
 		lowered = search_text.lower()

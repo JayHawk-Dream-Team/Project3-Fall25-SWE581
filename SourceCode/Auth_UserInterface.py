@@ -11,6 +11,7 @@ import streamlit as st
 import requests
 from AuthFunctions import sign_in, create_account, reset_password, sign_out
 from HelperFunctions import initFirebase
+from EventsSearchAPI import list_filtered_events as list_events
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
