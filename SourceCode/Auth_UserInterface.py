@@ -172,28 +172,96 @@ def show_password_reset_form():
 
     st.caption("Remember your password? Click 'Sign In' above")
 
+from EventsAPI import list_events, create_event
+import streamlit as st
+from datetime import datetime
 
 def show_logged_in_view():
-    """Render a placeholder post-authentication view.
+    """Render the authenticated Events Home page with search, filter, and event list."""
+    db = get_db()  # Cached Firestore client
+    user = st.session_state.get("user_info") or {}
+    name = user.get("displayName") or user.get("email", "User")
+    uid = user.get("localId", "unknown_user")
 
-    Displays basic user identity info and an expander with selected session
-    attributes. Includes a sign-out button that clears session state. Intended
-    to be replaced with the actual application dashboard in future iterations.
-    """
-    user = st.session_state.get('user_info') or {}
-    name = user.get('displayName') or user.get('email') or 'User'
+    # --- Header ---
+    st.title("HomeStand Dashboard")
+    st.caption(f"Signed in as **{name}**")
 
-    st.title("You're in")
-    st.success(f"Signed in as {name}")
-    st.caption("This is a placeholder view after successful authentication. Replace with your app dashboard.")
+    # --- Search + Filter Row ---
+    col1, col2, col3 = st.columns([3, 1, 1])
+    with col1:
+        search_text = st.text_input("🔍 Search Events", placeholder="Search by title or description...")
+    with col2:
+        published_filter = st.selectbox("Filter", ["All", "Published", "Unpublished"])
+    with col3:
+        if st.button("🔄 Refresh"):
+            st.rerun()
 
-    with st.expander("Session details", expanded=False):
-        st.json({k: v for k, v in user.items() if k in ("email", "localId", "emailVerified", "displayName")})
+    # --- Create Event Button ---
+    with st.expander("➕ Create New Event"):
+        with st.form("create_event_form"):
+            title = st.text_input("Event Title")
+            description = st.text_area("Description")
+            location = st.text_input("Location")
+            start_time = st.date_input("Start Date")
+            end_time = st.date_input("End Date")
+            published = st.checkbox("Publish Immediately", value=False)
+            submitted = st.form_submit_button("Create Event")
 
-    col1, col2 = st.columns(2)
-    if col1.button("Sign out"):
+            if submitted:
+                if not title:
+                    st.error("Event title is required.")
+                else:
+                    event_data = {
+                        "title": title,
+                        "description": description,
+                        "location": location,
+                        "start_time": datetime.combine(start_time, datetime.min.time()).isoformat() + "Z",
+                        "end_time": datetime.combine(end_time, datetime.min.time()).isoformat() + "Z",
+                        "published": published
+                    }
+                    created = create_event(db, event_data, user_id=uid)
+                    st.success(f"✅ Event '{created['title']}' created successfully!")
+                    st.rerun()
+
+    # --- Fetch Events ---
+    filter_flag = None
+    if published_filter == "Published":
+        filter_flag = True
+    elif published_filter == "Unpublished":
+        filter_flag = False
+
+    events, next_id = list_events(db, published=filter_flag, limit=25)
+
+    # --- Search Filtering (client-side) ---
+    if search_text:
+        events = [
+            e for e in events
+            if search_text.lower() in e["title"].lower() or search_text.lower() in e["description"].lower()
+        ]
+
+    # --- Display Events ---
+    st.subheader("📅 Events")
+    if not events:
+        st.info("No events found. Try adjusting your filters or create a new event.")
+    else:
+        for e in events:
+            with st.container():
+                st.markdown(f"### {e['title']}")
+                st.write(e.get("description", ""))
+                st.caption(f"📍 {e.get('location', 'Unknown')} | 🕒 {e.get('start_time', '')}")
+                st.divider()
+
+    # --- Pagination Placeholder ---
+    if next_id:
+        st.button("Load More Events")
+
+    # --- Sign Out ---
+    if st.button("Sign Out"):
+        from AuthFunctions import sign_out
         sign_out()
         st.rerun()
+
 
 if st.session_state.get("user_info"):
     show_logged_in_view()

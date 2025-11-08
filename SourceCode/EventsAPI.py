@@ -113,7 +113,8 @@ def list_events(db, published: Optional[bool] = None, limit: Optional[int] = Non
         - next_start_after_id: ID to pass as start_after to fetch the next page, or None
     """
     col = _get_collection(db)
-    query = col.order_by("created_at", direction="DESC")
+    # Firestore expects direction to be 'ASCENDING' or 'DESCENDING', not 'DESC'
+    query = col.order_by("created_at", direction="DESCENDING")
 
     if published is True:
         query = query.where("published", "==", True)

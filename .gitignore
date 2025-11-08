@@ -144,6 +144,11 @@ ENV/
 env.bak/
 venv.bak/
 
+# Local Streamlit secrets and Firebase service account (do not commit)
+.streamlit/secrets.toml
+firebase_key_sweproj3_fall25.json
+SourceCode/firebase_key_sweproj3_fall25.json
+
 # Spyder project settings
 .spyderproject
 .spyproject
