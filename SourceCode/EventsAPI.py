@@ -58,6 +58,7 @@ def create_event(db,
     doc = {
         "title": event_data.get("title", ""),
         "description": event_data.get("description", ""),
+        "capacity": event_data.get("capacity", ""),
         "location": event_data.get("location", ""),
         "start_time": event_data.get("start_time"),  # expected ISO string or None
         "end_time": event_data.get("end_time"),
@@ -113,7 +114,7 @@ def list_events(db, published: Optional[bool] = None, limit: Optional[int] = Non
         - next_start_after_id: ID to pass as start_after to fetch the next page, or None
     """
     col = _get_collection(db)
-    
+
     query = col.order_by("created_at", direction="DESCENDING")
 
     if published is True:

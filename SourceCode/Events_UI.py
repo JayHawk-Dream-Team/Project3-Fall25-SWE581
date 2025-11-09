@@ -70,7 +70,7 @@ def validate_event_data(title: str, start_date: datetime.date, start_time: datet
     # combine date and time
     start_datetime = datetime.combine(start_date, start_time)
     end_datetime = datetime.combine(start_date, end_time)
-    
+
     # check if end is after start
     if end_datetime <= start_datetime:
         return False, "Event end time must be after start time"
@@ -122,8 +122,8 @@ def show_event_creation_form(db, user_id: str, edit_mode: bool = False, event_da
         _, default_end_time = parse_iso_to_datetime(event_data.get('end_time'))
     else:
         default_start_date = datetime.now().date()
-        default_start_time = datetime.now().time()
-        default_end_time = (datetime.now() + timedelta(hours=3)).time()
+        default_start_time = datetime.strptime("18:00", "%H:%M").time()
+        default_end_time = datetime.strptime("21:00", "%H:%M").time()
     
     default_categories = event_data.get('categories', []) if event_data else []
     default_published = event_data.get('published', False) if event_data else False
