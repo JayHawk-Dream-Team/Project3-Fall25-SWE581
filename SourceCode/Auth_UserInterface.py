@@ -18,6 +18,7 @@ from firebase_admin import credentials, firestore
 import uuid
 import time
 from EventsSearch import show_events_dashboard
+from Events_UI import show_event_management_interface
 
 @st.cache_resource(show_spinner=False)
 def get_db():
@@ -176,8 +177,15 @@ def show_password_reset_form():
 
 def show_logged_in_view():
     """Delegate to the events dashboard and render sign-out control."""
-    show_events_dashboard()
-    if st.button("Sign Out"):
+    page = st.sidebar.radio(
+        "", ["Events Dashboard", "Event Management", "Sign Out"]
+    )
+
+    if page == "Event Dashboard":
+        show_events_dashboard()
+    elif page == "Event Management":
+        show_event_management_interface()
+    elif page == "Sign Out":
         sign_out()
         st.rerun()
 
