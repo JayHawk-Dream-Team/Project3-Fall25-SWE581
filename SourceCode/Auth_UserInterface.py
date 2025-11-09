@@ -73,13 +73,13 @@ def show_auth_pages():
     # Create tab-like buttons
     col1, col2, col3 = st.columns(3)
     with col2:
-        signup_btn = st.button("Sign In",
+        signup_btn = st.button("Sign In", key="sigin",
                               type="primary" if not st.session_state.show_signup and not st.session_state.show_reset else "secondary")
     with col1:
-        signin_btn = st.button("Create Account",
+        signin_btn = st.button("Create Account", key="signup",
                               type="primary" if st.session_state.show_signup and not st.session_state.show_reset else "secondary")
     with col3:
-        reset_btn = st.button("Reset Password",
+        reset_btn = st.button("Reset Password", key="resetpwd",
                              type="primary" if st.session_state.show_reset else "secondary")
 
     # Handle button clicks
