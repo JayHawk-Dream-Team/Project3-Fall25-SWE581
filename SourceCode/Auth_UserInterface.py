@@ -19,6 +19,7 @@ import uuid
 import time
 from EventsSearch import show_events_dashboard
 from Events_UI import show_event_management_interface
+from Profile_UI import show_profile_page
 
 @st.cache_resource(show_spinner=False)
 def get_db():
@@ -182,13 +183,15 @@ def show_logged_in_view():
     st.sidebar.markdown("# Navigation")
 
     page = st.sidebar.radio(
-        "", ["Events Dashboard", "Event Management"], label_visibility="visible"
+        "", ["Events Dashboard", "Event Management", "Profile"], label_visibility="visible"
     )
 
     if page == "Events Dashboard":
         show_events_dashboard()
     elif page == "Event Management":
         show_event_management_interface()
+    elif page == "Profile":
+        show_profile_page()
     
     st.sidebar.divider()
     if st.sidebar.button("🚪 Sign Out", use_container_width=True):
