@@ -176,16 +176,22 @@ def show_password_reset_form():
     st.caption("Remember your password? Click 'Sign In' above")
 
 def show_logged_in_view():
-    """Delegate to the events dashboard and render sign-out control."""
+    """Render sidebar navigation and delegate to selected logged-in view.
+    """
+
+    st.sidebar.markdown("# Navigation")
+
     page = st.sidebar.radio(
-        "", ["Events Dashboard", "Event Management", "Sign Out"]
+        "", ["Events Dashboard", "Event Management"], label_visibility="visible"
     )
 
-    if page == "Event Dashboard":
+    if page == "Events Dashboard":
         show_events_dashboard()
     elif page == "Event Management":
         show_event_management_interface()
-    elif page == "Sign Out":
+    
+    st.sidebar.divider()
+    if st.sidebar.button("🚪 Sign Out", use_container_width=True):
         sign_out()
         st.rerun()
 

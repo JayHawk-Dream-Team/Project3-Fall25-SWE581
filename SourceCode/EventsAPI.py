@@ -2,6 +2,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime, timezone
 import uuid
 from HelperFunctions import initFirebase
+from google.api_core.exceptions import FailedPrecondition
 
 # Firestore client type is dynamic; keep local reference
 # Use ISO 8601 UTC strings for timestamps (example: "2025-11-06T14:30:00Z")
@@ -122,20 +123,39 @@ def list_events(db, published: Optional[bool] = None, limit: Optional[int] = Non
     elif published is False:
         query = query.where("published", "==", False)
 
-    docs = None
-    if start_after:
-        start_doc = col.document(start_after).get()
-        if start_doc.exists:
-            docs = query.start_after(start_doc).limit(limit or 50).stream()
-        else:
-            # start_after not found -> start from beginning
-            docs = query.limit(limit or 50).stream()
-    else:
-        docs = query.limit(limit or 50).stream()
+    def _stream_or_fallback() -> List[Dict[str, Any]]:
+        """Stream query results; on index error, fallback to client-side sort.
+        """
+        try:
+            if start_after:
+                start_doc = col.document(start_after).get()
+                if start_doc.exists:
+                    stream = query.start_after(start_doc).limit(limit or 50).stream()
+                else:
+                    stream = query.limit(limit or 50).stream()
+            else:
+                stream = query.limit(limit or 50).stream()
+            return [_normalize_event_for_return(d) for d in stream]
+        except FailedPrecondition:
+            # Fallback: filter only, client-side sort by created_at desc
+            if published is True:
+                base_q = col.where("published", "==", True)
+            elif published is False:
+                base_q = col.where("published", "==", False)
+            else:
+                base_q = col
+            stream = base_q.limit(limit or 50).stream()
+            items = []
+            for d in stream:
+                item = _normalize_event_for_return(d)
+                items.append(item)
+            items.sort(key=lambda x: x.get("created_at", ""), reverse=True)
+            return items
 
-    results = [ _normalize_event_for_return(d) for d in docs ]
+    results = _stream_or_fallback()
 
     # Determine next_start_after id for pagination (last doc id)
+    # If fallback path was used, pagination token may be inaccurate; keep simple
     next_id = results[-1]["id"] if results else None
     return results, next_id
 

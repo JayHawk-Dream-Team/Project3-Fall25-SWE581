@@ -13,7 +13,6 @@ is populated before calling `show_events_dashboard`.
 
 from datetime import datetime
 import streamlit as st
-from EventsAPI import create_event
 from EventsSearchAPI import list_filtered_events as list_events
 from HelperFunctions import initFirebase
 @st.cache_resource(show_spinner=False)
@@ -37,15 +36,7 @@ def show_events_dashboard():
 	st.caption(f"Signed in as **{name}**")
 
 	# --- Search + Filter Row ---
-	# col1, col2, col3 = st.columns([3, 1, 1])
-	# with col1:
-	# 	search_text = st.text_input("🔍 Search Events", placeholder="Search by title or description...")
-	# with col2:
-	# 	published_filter = st.selectbox("Filter", ["All", "Published", "Unpublished"])
-	# with col3:
-	# 	if st.button("🔄 Refresh"):
-	# 		st.rerun()
-	col1, col2, col3, col4 = st.columns([3, 1.5, 1.5, 1.5])
+	col1, col2, col3, col4, col5 = st.columns([3, 1.5, 1.5, 1.5, 1])
 	with col1:
 		search_text = st.text_input("🔍 Search Events", placeholder="Search by title or description...")
 	with col2:
@@ -54,38 +45,12 @@ def show_events_dashboard():
 		date_filter = st.date_input("📅 Date (optional)", value=None)
 	with col4:
 		published_filter = st.selectbox("Filter", ["All", "Published", "Unpublished"])
+	with col5:
+		if st.button(label="🔄"):
+			st.rerun()
 
 
-	if st.button("🔄 Refresh"):
-		st.rerun()
-
-
-	# --- Create Event Button ---
-	with st.expander("➕ Create New Event"):
-		with st.form("create_event_form"):
-			title = st.text_input("Event Title")
-			description = st.text_area("Description")
-			location = st.text_input("Location")
-			start_date = st.date_input("Start Date")
-			end_date = st.date_input("End Date")
-			published = st.checkbox("Publish Immediately", value=False)
-			submitted = st.form_submit_button("Create Event")
-
-			if submitted:
-				if not title:
-					st.error("Event title is required.")
-				else:
-					event_data = {
-						"title": title,
-						"description": description,
-						"location": location,
-						"start_time": datetime.combine(start_date, datetime.min.time()).isoformat() + "Z",
-						"end_time": datetime.combine(end_date, datetime.min.time()).isoformat() + "Z",
-						"published": published,
-					}
-					created = create_event(db, event_data, user_id=uid)
-					st.success(f"✅ Event '{created['title']}' created successfully!")
-					st.rerun()
+	# Create Event UI removed per request.
 
 	# --- Fetch Events ---
 	filter_flag = None
@@ -120,5 +85,5 @@ def show_events_dashboard():
 	if next_id:
 		st.button("Load More Events")
 
-	# Sign-out button is intentionally omitted here; caller handles auth actions.
+
 
