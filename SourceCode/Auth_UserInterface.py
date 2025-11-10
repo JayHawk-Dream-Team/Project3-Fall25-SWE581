@@ -182,8 +182,9 @@ def show_logged_in_view():
 
     st.sidebar.markdown("# Navigation")
 
+    # Provide a non-empty (but collapsed) label for accessibility.
     page = st.sidebar.radio(
-        "", ["Events Dashboard", "Event Management", "Profile"], label_visibility="visible"
+        "Navigation", ["Events Dashboard", "Event Management", "Profile"], label_visibility="collapsed"
     )
 
     if page == "Events Dashboard":
