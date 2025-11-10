@@ -36,7 +36,7 @@ def _avatar_block(avatar_url: str, display_name: str):
     c1, c2 = st.columns([1, 3])
     with c1:
         if avatar_url:
-            st.image(avatar_url, use_container_width=True)
+            st.image(avatar_url, width=150) #, use_container_width=True) this caused an error with using a url
         else:
             # Simple placeholder
             st.markdown(
