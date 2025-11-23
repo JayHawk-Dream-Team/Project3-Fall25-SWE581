@@ -21,6 +21,7 @@ from EventsSearch import show_events_dashboard
 from Events_UI import show_event_management_interface
 from Profile_UI import show_profile_page
 from NewsUI import show_news_page
+from TournamentUI import show_tournament_page
 
 
 @st.cache_resource(show_spinner=False)
@@ -186,13 +187,15 @@ def show_logged_in_view():
 
     # Provide a non-empty (but collapsed) label for accessibility.
     page = st.sidebar.radio(
-        "Navigation", ["Events Dashboard", "Event Management","News", "Profile"], label_visibility="collapsed"
+        "Navigation", ["Events Dashboard", "Event Management", "Tournament", "News", "Profile"], label_visibility="collapsed"
     )
 
     if page == "Events Dashboard":
         show_events_dashboard()
     elif page == "Event Management":
         show_event_management_interface()
+    elif page == "Tournament":
+        show_tournament_page()
     elif page == "News":
         show_news_page()
     elif page == "Profile":
