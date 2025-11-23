@@ -14,6 +14,7 @@ from EventsAPI import (
     PermissionDenied
 )
 from HelperFunctions import initFirebase
+from RSVP_UI import show_rsvp_tab
 
 @st.cache_resource(show_spinner=False)
 def get_db():
@@ -465,7 +466,7 @@ def show_event_management_interface():
         st.warning(f"⚠️ You have reached the maximum limit of 3 events ({user_event_count}/3)")
     
     # manual tab navigation using buttons
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         if st.button("Create Event", 
                     type="primary" if st.session_state.active_tab == 0 else "secondary",
@@ -480,6 +481,12 @@ def show_event_management_interface():
                     use_container_width=True,
                     key="tab_my_events"):
             st.session_state.active_tab = 1
+            st.rerun()
+    with col3:
+        if st.button("My RSVPs", 
+                    type="primary" if st.session_state.active_tab == 2 else "secondary",
+                    use_container_width=True, key="tab_my_rsvps"):
+            st.session_state.active_tab = 2
             st.rerun()
     
     st.divider()
@@ -502,6 +509,10 @@ def show_event_management_interface():
                     st.rerun()
             else:
                 show_event_creation_form(db, user_id, edit_mode=False)
+    elif st.session_state.active_tab == 1:
+        show_my_events_list(db, user_id)
+    elif st.session_state.active_tab == 2:
+        show_rsvp_tab()
     
     else:
         # My Events tab content

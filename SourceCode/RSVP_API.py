@@ -1,6 +1,6 @@
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timezone
-
+from google.cloud.firestore import FieldFilter, transactional
 # --------------------------------------------------------------------
 # Custom Exceptions
 # --------------------------------------------------------------------
@@ -50,9 +50,9 @@ def create_rsvp(db, event_id: str, user_id: str) -> Dict[str, Any]:
 
     # 2. Check for existing active RSVP for this event + user
     existing = (
-        rsvp_col.where("user_id", "==", user_id)
-                .where("event_id", "==", event_id)
-                .where("status", "==", "active")
+        rsvp_col.where(filter=FieldFilter("user_id", "==", user_id))
+                .where(filter=FieldFilter("event_id", "==", event_id))
+                .where(filter=FieldFilter("status", "==", "active"))
                 .limit(1)
                 .get()
     )
@@ -65,6 +65,7 @@ def create_rsvp(db, event_id: str, user_id: str) -> Dict[str, Any]:
         raise EventFull("This event has reached capacity")
 
     # 4 + 5. Create RSVP and increment rsvp_count ATOMICALLY
+    @transactional
     def txn_op(transaction):
 
         # Re-read inside transaction
@@ -94,7 +95,8 @@ def create_rsvp(db, event_id: str, user_id: str) -> Dict[str, Any]:
 
         return {**rsvp_data, "id": rsvp_ref.id, "event": event_data}
 
-    return db.transaction().run(txn_op)
+    transaction = db.transaction()
+    return txn_op(transaction)
 
 
 # --------------------------------------------------------------------
@@ -107,8 +109,8 @@ def get_user_rsvps(db, user_id: str) -> List[Dict[str, Any]]:
     event_col = _get_events_collection(db)
 
     # 1. Fetch active RSVPs for this user
-    rsvps = rsvp_col.where("user_id", "==", user_id)\
-                    .where("status", "==", "active")\
+    rsvps = rsvp_col.where(filter=FieldFilter("user_id", "==", user_id))\
+                    .where(filter=FieldFilter("status", "==", "active"))\
                     .get()
 
     results = []
@@ -162,9 +164,9 @@ def check_user_rsvp(db, event_id: str, user_id: str) -> bool:
 
     rsvp_col = _get_rsvp_collection(db)
     existing = (
-        rsvp_col.where("user_id", "==", user_id)
-                .where("event_id", "==", event_id)
-                .where("status", "==", "active")
+        rsvp_col.where(filter=FieldFilter("user_id", "==", user_id))
+                .where(filter=FieldFilter("event_id", "==", event_id))
+                .where(filter=FieldFilter("status", "==", "active"))
                 .limit(1)
                 .get()
     )
@@ -210,22 +212,31 @@ def cancel_rsvp(db, rsvp_id: str, user_id: str) -> None:
             raise CancellationNotAllowed("Cannot cancel RSVP after event start")
 
     # 4 + 5: Cancel RSVP + decrement count atomically
+    @transactional
     def txn_op(transaction):
-
+        # you need to read everything first, then do all the writes 
         # Re-read inside transaction
         snap = rsvp_ref.get(transaction=transaction)
+        event_snap = event_ref.get(transaction=transaction)
+
         if not snap.exists:
             raise RSVPNotFound("RSVP disappeared during transaction")
 
         transaction.update(rsvp_ref, {"status": "cancelled"})
 
         # decrement rsvp_count
-        event_snap = event_ref.get(transaction=transaction)
         if event_snap.exists:
             count = event_snap.to_dict().get("rsvp_count", 0)
             transaction.update(event_ref, {"rsvp_count": max(0, count - 1)})
 
-    db.transaction().run(txn_op)
+    transaction = db.transaction()
+    txn_op(transaction)
+
+    return {
+        "id": rsvp_id,
+        "status": "cancelled",
+        "event_id": event_id
+    }
 
 
 # --------------------------------------------------------------------
@@ -237,8 +248,8 @@ def get_rsvp_by_event_and_user(db, event_id: str, user_id: str) -> Optional[Dict
     rsvp_col = _get_rsvp_collection(db)
 
     docs = (
-        rsvp_col.where("event_id", "==", event_id)
-                .where("user_id", "==", user_id)
+        rsvp_col.where(filter=FieldFilter("event_id", "==", event_id))
+                .where(filter=FieldFilter("user_id", "==", user_id))
                 .limit(1)
                 .get()
     )

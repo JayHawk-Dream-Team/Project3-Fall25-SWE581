@@ -60,6 +60,7 @@ def create_event(db,
         "title": event_data.get("title", ""),
         "description": event_data.get("description", ""),
         "capacity": event_data.get("capacity", ""),
+        "rsvp_count": 0,
         "location": event_data.get("location", ""),
         "start_time": event_data.get("start_time"),  # expected ISO string or None
         "end_time": event_data.get("end_time"),

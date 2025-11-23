@@ -11,14 +11,69 @@ The caller (Auth_UserInterface) must ensure that `st.session_state.user_info`
 is populated before calling `show_events_dashboard`.
 """
 
-from datetime import datetime
 import streamlit as st
 from EventsSearchAPI import list_filtered_events as list_events
 from HelperFunctions import initFirebase
+from RSVP_API import (
+    create_rsvp,
+    get_event_rsvp_count,
+    check_user_rsvp,
+    RSVPAlreadyExists,
+    EventFull
+)
+from RSVP_UI import is_event_past
+
 @st.cache_resource(show_spinner=False)
 def _db():
 	"""Return a cached Firestore client for event operations."""
 	return initFirebase()
+
+def initialize_search_session_state():
+    """Initialize session state for search page."""
+    if 'rsvp_success_msg' not in st.session_state:
+        st.session_state.rsvp_success_msg = None
+    if 'rsvp_error_msg' not in st.session_state:
+        st.session_state.rsvp_error_msg = None
+
+
+def get_seats_left(db, event: dict) -> int:
+    """Calculate remaining seats for an event."""
+    capacity = event.get('capacity', 0)
+    if capacity == 0:
+        return 0
+    try:
+        rsvp_count = get_event_rsvp_count(db, event.get('id'))
+    except NotImplementedError:
+        # Fallback: use rsvp_count from event if API not implemented
+        rsvp_count = event.get('rsvp_count', 0)
+    return max(0, capacity - rsvp_count)
+
+
+def is_event_full(db, event: dict) -> bool:
+    """Check if an event has reached capacity."""
+    return get_seats_left(db, event) <= 0
+
+
+def has_user_rsvped(db, event_id: str, user_id: str) -> bool:
+    """Check if user has already RSVP'd to this event."""
+    try:
+        return check_user_rsvp(db, event_id, user_id)
+    except NotImplementedError:
+        # Fallback: assume not RSVP'd if API not implemented
+        return False
+
+
+def handle_rsvp(db, event_id: str, user_id: str, event_title: str):
+    """Handle RSVP button click."""
+    try:
+        create_rsvp(db, event_id, user_id)
+        st.session_state.rsvp_success_msg = f"Successfully RSVP'd to '{event_title}'!"
+    except RSVPAlreadyExists:
+        st.session_state.rsvp_error_msg = "You have already RSVP'd to this event."
+    except EventFull:
+        st.session_state.rsvp_error_msg = "Sorry, this event is full."
+    except Exception as e:
+        st.session_state.rsvp_error_msg = f"Error: {str(e)}"
 
 def show_events_dashboard():
 	"""Render the authenticated Events Home page with search, filter, and event list.
@@ -75,11 +130,57 @@ def show_events_dashboard():
 		st.info("No events found. Try adjusting your filters or create a new event.")
 	else:
 		for e in events:
+			event_id = e.get('id')
+			capacity = e.get('capacity', 0)
+			seats_left = get_seats_left(db, e)
+			is_full = seats_left <= 0
+			user_has_rsvped = has_user_rsvped(db, event_id, uid)
+			is_own_event = e.get('created_by') == uid
+			event_passed = is_event_past(e.get('start_time'))
+		
 			with st.container():
+                # Event header with title
+				col_title, col_status = st.columns([3, 1])
+			with col_title:
 				st.markdown(f"### {e['title']}")
-				st.write(e.get("description", ""))
-				st.caption(f"📍 {e.get('location', 'Unknown')} | 🕒 {e.get('start_time', '')}")
-				st.divider()
+			with col_status:
+				if 0 < seats_left <= 5:
+					st.markdown(f"🟡 **{seats_left} seats left**")
+
+			# Description
+			st.write(e.get("description", ""))
+
+			# Event details row
+			col_details, col_seats, col_rsvp = st.columns([2, 1, 1])
+
+			with col_details:
+				start_time = e.get('start_time', '').split('T')
+				st.caption(f"📍 {e.get('location', 'Unknown')} | 🕒 {start_time[0]} | {start_time[1][:-1]}")
+
+			with col_seats:
+				# Dynamic seats display
+				if capacity > 0:
+					enrolled = capacity - seats_left
+					st.caption(f"**Seats:** {enrolled}/{capacity}")
+				else:
+					st.caption("Seats: Unlimited")
+
+			with col_rsvp:
+				# RSVP Button logic
+				if is_own_event:
+					st.caption("*Your event*")
+				elif user_has_rsvped:
+					st.success("✅ Registered")
+				elif is_full:
+					st.error("*🔴 FULL*")
+				elif event_passed:
+					st.warning("Event has Passed")
+				else:
+					if st.button("🎫 RSVP", key=f"rsvp_{event_id}"):
+						handle_rsvp(db, event_id, uid, e.get('title', 'Event'))
+						st.rerun()
+				
+			st.divider()
 
 	# --- Pagination Placeholder ---
 	if next_id:
