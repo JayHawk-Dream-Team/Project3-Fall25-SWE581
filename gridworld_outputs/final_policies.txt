@@ -1,0 +1,19 @@
+Gridworld RL Assignment run at 2025-11-19 14:47:16
+
+Final greedy policy (Policy Iteration):
+ T  ^  ^  ^  ^ 
+ ^  ^  ^  ^  ^ 
+ ^  ^  ^  ^  ^ 
+ ^  ^  ^  ^  ^ 
+ ^  ^  ^  ^  T 
+
+Final greedy policy (Value Iteration):
+ T  ^  ^  ^  ^ 
+ ^  ^  ^  ^  ^ 
+ ^  ^  ^  ^  ^ 
+ ^  ^  ^  ^  ^ 
+ ^  ^  ^  ^  T 
+
+Policy Iteration: outer loops = 1
+Policy Iteration: total evaluation sweeps = 208
+Value Iteration: iterations taken = 330
