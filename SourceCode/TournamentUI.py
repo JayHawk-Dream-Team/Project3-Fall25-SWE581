@@ -151,11 +151,11 @@ def _render_standings_table(groups: List[Dict[str, Any]]):
         st.markdown(f"#### {group_name}")
 
         # Prepare rows as list-of-lists for st.table
-        header = ["#", "Team", "P", "W", "D", "L", "GF", "GA", "GD", "Pts"]
+        header = ["Team", "P", "W", "D", "L", "GF", "GA", "GD", "Pts"]
         table_rows = []
         for row in rows:
             table_rows.append([
-                row.get("rank", ""),
+                #row.get("rank", ""),
                 row.get("team_name", ""),
                 row.get("played", ""),
                 row.get("win", ""),
@@ -189,7 +189,7 @@ def show_tournament_page():
             fav_teams = []
 
     st.title("Tournament Information")
-    st.caption(f"League ID: {LEAGUE_ID} • Season: {SEASON} (backend data stubbed)")
+    st.caption(f"League ID: {LEAGUE_ID} • Season: {SEASON}")
 
     # Quick filter: All / My Teams
     view_mode = st.radio(
@@ -234,7 +234,6 @@ def show_tournament_page():
     if not today_fixtures:
         st.info(
             "No fixtures available for today yet. "
-            "Once the backend is implemented, today's fixtures will appear here."
         )
     else:
         for f in today_fixtures:
@@ -258,7 +257,6 @@ def show_tournament_page():
     if not standings:
         st.info(
             "Standings are not available yet. "
-            "wire API-FOOTBALL into TournamentAPI.get_tournament_summary."
         )
     else:
         _render_standings_table(standings)
